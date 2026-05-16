@@ -7,11 +7,14 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; padding: 2rem; }
-  .container { max-width: 800px; margin: 0 auto; }
-  .ml-header { display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; }
+  .container { max-width: 860px; margin: 0 auto; }
+  .ml-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 2rem; }
+  .ml-header-left { display: flex; align-items: center; gap: 12px; }
   .ml-logo { width: 44px; height: 44px; background: #FFE600; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #333; }
   .ml-title { font-size: 20px; font-weight: 600; }
   .ml-subtitle { font-size: 13px; color: #666; }
+  .status-pill { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: #e6f9ee; color: #00a650; font-weight: 500; }
+  .status-pill.off { background: #fff0f0; color: #cc0000; }
   .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 1px solid #ddd; }
   .tab { padding: 10px 18px; font-size: 14px; border: none; background: none; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .tab.active { color: #1a6bff; border-bottom-color: #1a6bff; font-weight: 500; }
@@ -28,6 +31,8 @@
   .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
   .badge-green { background: #e6f9ee; color: #00a650; }
   .badge-blue { background: #e6f0ff; color: #1a6bff; }
+  .badge-amber { background: #fff8e1; color: #b8860b; }
+  .badge-red { background: #fff0f0; color: #cc0000; }
   .meta-item { font-size: 12px; color: #888; display: inline-block; margin-right: 16px; }
   .meta-item span { color: #333; font-weight: 500; }
   .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
@@ -36,36 +41,56 @@
   .stat-value { font-size: 18px; font-weight: 600; }
   .loading { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
   .error-msg { background: #fff0f0; color: #cc0000; border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; margin-bottom: 1rem; }
+  .success-msg { background: #e6f9ee; color: #00a650; border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; margin-bottom: 1rem; }
   .kw-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.5rem; }
   .kw-tag { background: #f5f5f5; border: 1px solid #eee; border-radius: 20px; padding: 4px 14px; font-size: 13px; cursor: pointer; }
   .kw-tag:hover { background: #e6f0ff; color: #1a6bff; }
-  .auth-box { background: #f9f9f9; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
-  .auth-label { font-size: 12px; color: #888; margin-bottom: 4px; }
   .hint { font-size: 13px; color: #888; padding: 1rem 0; }
+  .token-section { background: #fffbe6; border: 1px solid #ffe600; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .token-section input { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; margin: 8px 0; font-family: monospace; }
+  .token-section button { padding: 10px 20px; background: #1a6bff; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-right: 8px; }
+  .trends-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+  .trend-item { background: #f9f9f9; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .trend-rank { font-size: 12px; color: #aaa; min-width: 24px; font-weight: 600; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="ml-header">
-    <div class="ml-logo">ML</div>
-    <div>
-      <div class="ml-title">Mercado Libre — Centro de Operaciones</div>
-      <div class="ml-subtitle">Ferredal · Zentra</div>
+    <div class="ml-header-left">
+      <div class="ml-logo">ML</div>
+      <div>
+        <div class="ml-title">Mercado Libre — Centro de Operaciones</div>
+        <div class="ml-subtitle" id="user-info">Ferredal · Zentra</div>
+      </div>
     </div>
+    <span class="status-pill off" id="status-pill">No conectado</span>
   </div>
+
+  <div class="token-section" id="token-section">
+    <div style="font-size:12px;color:#888;margin-bottom:4px;">🔑 Conectar cuenta</div>
+    <input type="password" id="token-input" placeholder="APP_USR-..." />
+    <button onclick="conectarToken()">Conectar</button>
+    <button onclick="usarTokenGuardado()" style="background:#f0f0f0;color:#333;">Usar token guardado</button>
+  </div>
+  <div id="msg"></div>
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('mercado', this)">📊 Mercado</button>
     <button class="tab" onclick="switchTab('keywords', this)">🔍 Palabras clave</button>
+    <button class="tab" onclick="switchTab('tendencias', this)">🔥 Tendencias</button>
     <button class="tab" onclick="switchTab('cuenta', this)">👤 Mi cuenta</button>
+    <button class="tab" onclick="switchTab('publicaciones', this)">📦 Publicaciones</button>
+    <button class="tab" onclick="switchTab('ordenes', this)">🛒 Órdenes</button>
+    <button class="tab" onclick="switchTab('preguntas', this)">💬 Preguntas</button>
   </div>
 
   <div id="tab-mercado" class="section active">
     <div class="input-row">
-      <input type="text" id="search-query" placeholder="Ej: llave inglesa, taladro, cerradura..." />
+      <input type="text" id="search-query" placeholder="Ej: llave inglesa, taladro..." />
       <button onclick="buscarMercado()">Buscar</button>
     </div>
-    <div id="mercado-results"><div class="hint">Busca un producto para ver precios, competencia y tendencias del mercado.</div></div>
+    <div id="mercado-results"><div class="hint">Busca un producto para ver precios y competencia.</div></div>
   </div>
 
   <div id="tab-keywords" class="section">
@@ -73,26 +98,50 @@
       <input type="text" id="kw-query" placeholder="Ej: herramientas, ferretería..." />
       <button onclick="buscarKeywords()">Analizar</button>
     </div>
-    <div id="kw-results"><div class="hint">Ingresa una categoría para ver las palabras clave más usadas.</div></div>
+    <div id="kw-results"><div class="hint">Ingresa una categoría para ver palabras clave más usadas.</div></div>
+  </div>
+
+  <div id="tab-tendencias" class="section">
+    <div class="input-row">
+      <button onclick="cargarTendencias()" style="width:100%">Cargar tendencias MLC</button>
+    </div>
+    <div id="tendencias-results"><div class="hint">Búsquedas más populares en ML Chile.</div></div>
   </div>
 
   <div id="tab-cuenta" class="section">
-    <div class="auth-box">
-      <div class="auth-label">Estado de conexión</div>
-      <div style="color:#00a650; font-weight:500; font-size:13px;">✓ Credenciales configuradas</div>
-      <div style="margin-top:8px; font-size:12px; color:#888;">Client ID: 4838675781860767</div>
-    </div>
     <div class="input-row">
-      <button onclick="cargarCuenta()" style="width:100%">Cargar datos de mi cuenta</button>
+      <button onclick="cargarCuenta()" style="width:100%">Cargar mi cuenta</button>
     </div>
-    <div id="cuenta-results"><div class="hint">Haz click para ver tus publicaciones y ventas.</div></div>
+    <div id="cuenta-results"><div class="hint">Conecta tu cuenta primero.</div></div>
+  </div>
+
+  <div id="tab-publicaciones" class="section">
+    <div class="input-row">
+      <button onclick="cargarPublicaciones()" style="width:100%">Cargar publicaciones</button>
+    </div>
+    <div id="pub-results"><div class="hint">Tus publicaciones activas.</div></div>
+  </div>
+
+  <div id="tab-ordenes" class="section">
+    <div class="input-row">
+      <button onclick="cargarOrdenes()" style="width:100%">Cargar órdenes</button>
+    </div>
+    <div id="ordenes-results"><div class="hint">Tus ventas recientes.</div></div>
+  </div>
+
+  <div id="tab-preguntas" class="section">
+    <div class="input-row">
+      <button onclick="cargarPreguntas()" style="width:100%">Ver preguntas sin responder</button>
+    </div>
+    <div id="preguntas-results"><div class="hint">Preguntas pendientes.</div></div>
   </div>
 </div>
 
 <script>
-const CLIENT_ID = '4838675781860767';
-const CLIENT_SECRET = 'nc2rBhDFApCLbdcGktBQGtUCbAggCeh4';
 const SITE_ID = 'MLC';
+let ACCESS_TOKEN = localStorage.getItem('ml_token') || '';
+let USER_ID = localStorage.getItem('ml_user_id') || '';
+if (ACCESS_TOKEN) { document.getElementById('token-input').value = ACCESS_TOKEN; verificarToken(); }
 
 function switchTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -100,86 +149,168 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
 }
-
-function formatPrice(price) {
-  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(price);
+function formatPrice(p) { return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(p); }
+function showMsg(text, type='error') {
+  const el = document.getElementById('msg');
+  el.innerHTML = `<div class="${type==='error'?'error-msg':'success-msg'}">${text}</div>`;
+  setTimeout(() => el.innerHTML = '', 5000);
 }
-
+async function mlFetch(url) {
+  const res = await fetch('https://api.mercadolibre.com' + url, { headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` } });
+  return res.json();
+}
+function usarTokenGuardado() {
+  const saved = localStorage.getItem('ml_token');
+  if (saved) { document.getElementById('token-input').value = saved; conectarToken(); }
+  else showMsg('No hay token guardado.');
+}
+async function conectarToken() {
+  const token = document.getElementById('token-input').value.trim();
+  if (!token) { showMsg('Pega un Access Token.'); return; }
+  ACCESS_TOKEN = token;
+  await verificarToken();
+}
+async function verificarToken() {
+  try {
+    const data = await mlFetch('/users/me');
+    if (data.error) { showMsg('Token inválido: ' + (data.message || data.error)); return; }
+    USER_ID = data.id;
+    localStorage.setItem('ml_token', ACCESS_TOKEN);
+    localStorage.setItem('ml_user_id', USER_ID);
+    document.getElementById('user-info').textContent = data.nickname + ' · ' + data.country_id;
+    document.getElementById('status-pill').textContent = '✓ Conectado';
+    document.getElementById('status-pill').classList.remove('off');
+    document.getElementById('token-section').style.display = 'none';
+    showMsg('Conectado como ' + data.nickname, 'success');
+  } catch(e) { showMsg('Error de conexión.'); }
+}
 async function buscarMercado() {
   const q = document.getElementById('search-query').value.trim();
   if (!q) return;
   const el = document.getElementById('mercado-results');
-  el.innerHTML = '<div class="loading">Buscando en Mercado Libre Chile...</div>';
+  el.innerHTML = '<div class="loading">Buscando...</div>';
   try {
     const res = await fetch(`https://api.mercadolibre.com/sites/${SITE_ID}/search?q=${encodeURIComponent(q)}&limit=10`);
     const data = await res.json();
-    if (!data.results || data.results.length === 0) { el.innerHTML = '<div class="error-msg">No se encontraron resultados.</div>'; return; }
-    const items = data.results;
-    const prices = items.map(i => i.price);
-    const avgPrice = Math.round(prices.reduce((a,b)=>a+b,0)/prices.length);
+    if (!data.results?.length) { el.innerHTML = '<div class="error-msg">Sin resultados.</div>'; return; }
+    const prices = data.results.map(i => i.price);
+    const avg = Math.round(prices.reduce((a,b)=>a+b,0)/prices.length);
     let html = `<div class="stat-grid">
-      <div class="stat-card"><div class="stat-label">Total publicaciones</div><div class="stat-value">${(data.paging?.total||0).toLocaleString()}</div></div>
-      <div class="stat-card"><div class="stat-label">Precio promedio</div><div class="stat-value" style="font-size:15px">${formatPrice(avgPrice)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${(data.paging?.total||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-label">Precio promedio</div><div class="stat-value" style="font-size:15px">${formatPrice(avg)}</div></div>
       <div class="stat-card"><div class="stat-label">Mínimo</div><div class="stat-value" style="font-size:15px">${formatPrice(Math.min(...prices))}</div></div>
       <div class="stat-card"><div class="stat-label">Máximo</div><div class="stat-value" style="font-size:15px">${formatPrice(Math.max(...prices))}</div></div>
     </div>`;
-    items.slice(0,6).forEach(item => {
-      html += `<div class="result-card">
-        <div class="result-title">${item.title}</div>
-        <div style="margin-bottom:8px">
-          <span class="price-tag">${formatPrice(item.price)}</span>
-          <span class="badge badge-blue">${item.condition==='new'?'Nuevo':'Usado'}</span>
-          ${item.shipping?.free_shipping?'<span class="badge badge-green">Envío gratis</span>':''}
-        </div>
-        <div>
-          <span class="meta-item">Vendidos: <span>${item.sold_quantity||0}</span></span>
-          <span class="meta-item">Vendedor: <span>${item.seller?.nickname||'N/A'}</span></span>
-        </div>
-      </div>`;
+    data.results.slice(0,6).forEach(item => {
+      html += `<div class="result-card"><div class="result-title">${item.title}</div>
+        <div style="margin-bottom:8px"><span class="price-tag">${formatPrice(item.price)}</span>
+        <span class="badge badge-blue">${item.condition==='new'?'Nuevo':'Usado'}</span>
+        ${item.shipping?.free_shipping?'<span class="badge badge-green">Envío gratis</span>':''}</div>
+        <div><span class="meta-item">Vendidos: <span>${item.sold_quantity||0}</span></span>
+        <span class="meta-item">Vendedor: <span>${item.seller?.nickname||'N/A'}</span></span></div></div>`;
     });
     el.innerHTML = html;
-  } catch(e) { el.innerHTML = '<div class="error-msg">Error al conectar con Mercado Libre.</div>'; }
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error.</div>'; }
 }
-
 async function buscarKeywords() {
   const q = document.getElementById('kw-query').value.trim();
   if (!q) return;
   const el = document.getElementById('kw-results');
-  el.innerHTML = '<div class="loading">Analizando palabras clave...</div>';
+  el.innerHTML = '<div class="loading">Analizando...</div>';
   try {
     const res = await fetch(`https://api.mercadolibre.com/sites/${SITE_ID}/search?q=${encodeURIComponent(q)}&limit=20`);
     const data = await res.json();
-    const items = data.results || [];
     const wordCount = {};
-    items.forEach(item => {
+    const stop = ['para','con','los','las','del','una','por','que','como','este','esos','sus','más','sin'];
+    (data.results||[]).forEach(item => {
       item.title.toLowerCase().split(/\s+/).forEach(w => {
-        if (w.length > 3 && !['para','con','los','las','del','una','por','que','como','este','esos'].includes(w))
-          wordCount[w] = (wordCount[w]||0) + 1;
+        if (w.length > 3 && !stop.includes(w)) wordCount[w] = (wordCount[w]||0) + 1;
       });
     });
-    const sorted = Object.entries(wordCount).sort((a,b)=>b[1]-a[1]).slice(0,20);
-    let html = `<div class="hint">Palabras más frecuentes en títulos de "${q}" — úsalas en tus publicaciones:</div><div class="kw-grid">`;
+    const sorted = Object.entries(wordCount).sort((a,b)=>b[1]-a[1]).slice(0,25);
+    let html = `<div class="hint">Palabras más frecuentes en "${q}":</div><div class="kw-grid">`;
     sorted.forEach(([word, count]) => { html += `<div class="kw-tag">${word} <span style="opacity:0.5;font-size:11px">${count}</span></div>`; });
-    html += '</div>';
-    el.innerHTML = html;
-  } catch(e) { el.innerHTML = '<div class="error-msg">Error al obtener datos.</div>'; }
+    el.innerHTML = html + '</div>';
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error.</div>'; }
 }
-
-async function cargarCuenta() {
-  const el = document.getElementById('cuenta-results');
-  el.innerHTML = '<div class="loading">Conectando...</div>';
+async function cargarTendencias() {
+  const el = document.getElementById('tendencias-results');
+  el.innerHTML = '<div class="loading">Cargando...</div>';
   try {
-    const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=client_credentials&client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}`
-    });
-    const tokenData = await tokenRes.json();
-    if (!tokenData.access_token) { el.innerHTML = '<div class="error-msg">Necesita autorización OAuth completa del usuario.</div>'; return; }
-    el.innerHTML = '<div style="color:#00a650;font-weight:500;padding:1rem 0">✓ Conectado exitosamente</div>';
-  } catch(e) { el.innerHTML = '<div class="error-msg">Para datos de cuenta necesitamos completar OAuth.</div>'; }
+    const data = await (await fetch(`https://api.mercadolibre.com/trends/${SITE_ID}`)).json();
+    if (!data?.length) { el.innerHTML = '<div class="error-msg">Sin datos.</div>'; return; }
+    let html = '<div class="trends-grid">';
+    data.slice(0,20).forEach((t,i) => { html += `<div class="trend-item"><span class="trend-rank">#${i+1}</span><span style="font-size:13px">${t.keyword}</span></div>`; });
+    el.innerHTML = html + '</div>';
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error.</div>'; }
 }
-
+async function cargarCuenta() {
+  if (!ACCESS_TOKEN) { showMsg('Conecta tu cuenta primero.'); return; }
+  const el = document.getElementById('cuenta-results');
+  el.innerHTML = '<div class="loading">Cargando...</div>';
+  try {
+    const data = await mlFetch('/users/me');
+    const rep = data.seller_reputation;
+    el.innerHTML = `<div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Nickname</div><div class="stat-value" style="font-size:15px">${data.nickname}</div></div>
+      <div class="stat-card"><div class="stat-label">País</div><div class="stat-value" style="font-size:15px">${data.country_id}</div></div>
+      <div class="stat-card"><div class="stat-label">Reputación</div><div class="stat-value" style="font-size:15px">${rep?.level_id||'N/A'}</div></div>
+      <div class="stat-card"><div class="stat-label">Transacciones</div><div class="stat-value">${rep?.transactions?.total||0}</div></div>
+    </div>`;
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error.</div>'; }
+}
+async function cargarPublicaciones() {
+  if (!ACCESS_TOKEN) { showMsg('Conecta tu cuenta primero.'); return; }
+  const el = document.getElementById('pub-results');
+  el.innerHTML = '<div class="loading">Cargando...</div>';
+  try {
+    const search = await mlFetch(`/users/${USER_ID}/items/search?limit=20`);
+    if (!search.results?.length) { el.innerHTML = '<div class="hint">Sin publicaciones.</div>'; return; }
+    const details = await mlFetch(`/items?ids=${search.results.slice(0,10).join(',')}`);
+    let html = `<div class="stat-card" style="margin-bottom:1rem"><div class="stat-label">Total</div><div class="stat-value">${search.paging?.total||0}</div></div>`;
+    details.forEach(r => {
+      const it = r.body; if (!it) return;
+      html += `<div class="result-card"><div class="result-title">${it.title}</div>
+        <div style="margin-bottom:6px"><span class="price-tag">${formatPrice(it.price)}</span>
+        <span class="badge badge-${it.status==='active'?'green':it.status==='paused'?'amber':'red'}">${it.status}</span></div>
+        <div><span class="meta-item">Stock: <span>${it.available_quantity}</span></span>
+        <span class="meta-item">Vendidos: <span>${it.sold_quantity||0}</span></span></div></div>`;
+    });
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error.</div>'; }
+}
+async function cargarOrdenes() {
+  if (!ACCESS_TOKEN) { showMsg('Conecta tu cuenta primero.'); return; }
+  const el = document.getElementById('ordenes-results');
+  el.innerHTML = '<div class="loading">Cargando...</div>';
+  try {
+    const data = await mlFetch(`/orders/search?seller=${USER_ID}&limit=15`);
+    if (!data.results?.length) { el.innerHTML = '<div class="hint">Sin órdenes.</div>'; return; }
+    let html = `<div class="stat-card" style="margin-bottom:1rem"><div class="stat-label">Total</div><div class="stat-value">${data.paging?.total||0}</div></div>`;
+    data.results.forEach(o => {
+      html += `<div class="result-card"><div class="result-title">${o.order_items?.[0]?.item?.title||'Orden '+o.id}</div>
+        <div style="margin-bottom:6px"><span class="price-tag">${formatPrice(o.total_amount)}</span>
+        <span class="badge badge-${o.status==='paid'?'green':o.status==='cancelled'?'red':'amber'}">${o.status}</span></div>
+        <div><span class="meta-item">Comprador: <span>${o.buyer?.nickname||'N/A'}</span></span></div></div>`;
+    });
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error.</div>'; }
+}
+async function cargarPreguntas() {
+  if (!ACCESS_TOKEN) { showMsg('Conecta tu cuenta primero.'); return; }
+  const el = document.getElementById('preguntas-results');
+  el.innerHTML = '<div class="loading">Cargando...</div>';
+  try {
+    const data = await mlFetch(`/questions/search?seller_id=${USER_ID}&status=UNANSWERED&limit=20`);
+    if (!data.questions?.length) { el.innerHTML = '<div class="success-msg">✓ Sin preguntas pendientes</div>'; return; }
+    let html = `<div class="stat-card" style="margin-bottom:1rem"><div class="stat-label">Sin responder</div><div class="stat-value">${data.total||data.questions.length}</div></div>`;
+    data.questions.forEach(q => {
+      html += `<div class="result-card"><div class="result-title">${q.text?.slice(0,120)}${q.text?.length>120?'...':''}</div>
+        <div style="margin-top:6px"><span class="meta-item">Item: <span>${q.item_id}</span></span></div></div>`;
+    });
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error.</div>'; }
+}
 document.getElementById('search-query').addEventListener('keydown', e => { if(e.key==='Enter') buscarMercado(); });
 document.getElementById('kw-query').addEventListener('keydown', e => { if(e.key==='Enter') buscarKeywords(); });
 </script>
