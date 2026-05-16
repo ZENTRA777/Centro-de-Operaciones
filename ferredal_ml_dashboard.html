@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferredal — Centro ML</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; padding: 2rem; }
+  .container { max-width: 800px; margin: 0 auto; }
+  .ml-header { display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; }
+  .ml-logo { width: 44px; height: 44px; background: #FFE600; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #333; }
+  .ml-title { font-size: 20px; font-weight: 600; }
+  .ml-subtitle { font-size: 13px; color: #666; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 1px solid #ddd; }
+  .tab { padding: 10px 18px; font-size: 14px; border: none; background: none; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: #1a6bff; border-bottom-color: #1a6bff; font-weight: 500; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .input-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .input-row input { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+  .input-row input:focus { border-color: #1a6bff; }
+  .input-row button { padding: 10px 18px; background: #1a6bff; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .input-row button:hover { background: #0052cc; }
+  .result-card { background: white; border: 1px solid #eee; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+  .result-title { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  .price-tag { font-size: 16px; font-weight: 600; color: #00a650; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+  .badge-green { background: #e6f9ee; color: #00a650; }
+  .badge-blue { background: #e6f0ff; color: #1a6bff; }
+  .meta-item { font-size: 12px; color: #888; display: inline-block; margin-right: 16px; }
+  .meta-item span { color: #333; font-weight: 500; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .stat-card { background: #f9f9f9; border-radius: 10px; padding: 1rem; }
+  .stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .stat-value { font-size: 18px; font-weight: 600; }
+  .loading { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
+  .error-msg { background: #fff0f0; color: #cc0000; border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; margin-bottom: 1rem; }
+  .kw-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.5rem; }
+  .kw-tag { background: #f5f5f5; border: 1px solid #eee; border-radius: 20px; padding: 4px 14px; font-size: 13px; cursor: pointer; }
+  .kw-tag:hover { background: #e6f0ff; color: #1a6bff; }
+  .auth-box { background: #f9f9f9; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .auth-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .hint { font-size: 13px; color: #888; padding: 1rem 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="ml-header">
+    <div class="ml-logo">ML</div>
+    <div>
+      <div class="ml-title">Mercado Libre — Centro de Operaciones</div>
+      <div class="ml-subtitle">Ferredal · Zentra</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('mercado', this)">📊 Mercado</button>
+    <button class="tab" onclick="switchTab('keywords', this)">🔍 Palabras clave</button>
+    <button class="tab" onclick="switchTab('cuenta', this)">👤 Mi cuenta</button>
+  </div>
+
+  <div id="tab-mercado" class="section active">
+    <div class="input-row">
+      <input type="text" id="search-query" placeholder="Ej: llave inglesa, taladro, cerradura..." />
+      <button onclick="buscarMercado()">Buscar</button>
+    </div>
+    <div id="mercado-results"><div class="hint">Busca un producto para ver precios, competencia y tendencias del mercado.</div></div>
+  </div>
+
+  <div id="tab-keywords" class="section">
+    <div class="input-row">
+      <input type="text" id="kw-query" placeholder="Ej: herramientas, ferretería..." />
+      <button onclick="buscarKeywords()">Analizar</button>
+    </div>
+    <div id="kw-results"><div class="hint">Ingresa una categoría para ver las palabras clave más usadas.</div></div>
+  </div>
+
+  <div id="tab-cuenta" class="section">
+    <div class="auth-box">
+      <div class="auth-label">Estado de conexión</div>
+      <div style="color:#00a650; font-weight:500; font-size:13px;">✓ Credenciales configuradas</div>
+      <div style="margin-top:8px; font-size:12px; color:#888;">Client ID: 4838675781860767</div>
+    </div>
+    <div class="input-row">
+      <button onclick="cargarCuenta()" style="width:100%">Cargar datos de mi cuenta</button>
+    </div>
+    <div id="cuenta-results"><div class="hint">Haz click para ver tus publicaciones y ventas.</div></div>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = '4838675781860767';
+const CLIENT_SECRET = 'nc2rBhDFApCLbdcGktBQGtUCbAggCeh4';
+const SITE_ID = 'MLC';
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function formatPrice(price) {
+  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(price);
+}
+
+async function buscarMercado() {
+  const q = document.getElementById('search-query').value.trim();
+  if (!q) return;
+  const el = document.getElementById('mercado-results');
+  el.innerHTML = '<div class="loading">Buscando en Mercado Libre Chile...</div>';
+  try {
+    const res = await fetch(`https://api.mercadolibre.com/sites/${SITE_ID}/search?q=${encodeURIComponent(q)}&limit=10`);
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) { el.innerHTML = '<div class="error-msg">No se encontraron resultados.</div>'; return; }
+    const items = data.results;
+    const prices = items.map(i => i.price);
+    const avgPrice = Math.round(prices.reduce((a,b)=>a+b,0)/prices.length);
+    let html = `<div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total publicaciones</div><div class="stat-value">${(data.paging?.total||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-label">Precio promedio</div><div class="stat-value" style="font-size:15px">${formatPrice(avgPrice)}</div></div>
+      <div class="stat-card"><div class="stat-label">Mínimo</div><div class="stat-value" style="font-size:15px">${formatPrice(Math.min(...prices))}</div></div>
+      <div class="stat-card"><div class="stat-label">Máximo</div><div class="stat-value" style="font-size:15px">${formatPrice(Math.max(...prices))}</div></div>
+    </div>`;
+    items.slice(0,6).forEach(item => {
+      html += `<div class="result-card">
+        <div class="result-title">${item.title}</div>
+        <div style="margin-bottom:8px">
+          <span class="price-tag">${formatPrice(item.price)}</span>
+          <span class="badge badge-blue">${item.condition==='new'?'Nuevo':'Usado'}</span>
+          ${item.shipping?.free_shipping?'<span class="badge badge-green">Envío gratis</span>':''}
+        </div>
+        <div>
+          <span class="meta-item">Vendidos: <span>${item.sold_quantity||0}</span></span>
+          <span class="meta-item">Vendedor: <span>${item.seller?.nickname||'N/A'}</span></span>
+        </div>
+      </div>`;
+    });
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error al conectar con Mercado Libre.</div>'; }
+}
+
+async function buscarKeywords() {
+  const q = document.getElementById('kw-query').value.trim();
+  if (!q) return;
+  const el = document.getElementById('kw-results');
+  el.innerHTML = '<div class="loading">Analizando palabras clave...</div>';
+  try {
+    const res = await fetch(`https://api.mercadolibre.com/sites/${SITE_ID}/search?q=${encodeURIComponent(q)}&limit=20`);
+    const data = await res.json();
+    const items = data.results || [];
+    const wordCount = {};
+    items.forEach(item => {
+      item.title.toLowerCase().split(/\s+/).forEach(w => {
+        if (w.length > 3 && !['para','con','los','las','del','una','por','que','como','este','esos'].includes(w))
+          wordCount[w] = (wordCount[w]||0) + 1;
+      });
+    });
+    const sorted = Object.entries(wordCount).sort((a,b)=>b[1]-a[1]).slice(0,20);
+    let html = `<div class="hint">Palabras más frecuentes en títulos de "${q}" — úsalas en tus publicaciones:</div><div class="kw-grid">`;
+    sorted.forEach(([word, count]) => { html += `<div class="kw-tag">${word} <span style="opacity:0.5;font-size:11px">${count}</span></div>`; });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="error-msg">Error al obtener datos.</div>'; }
+}
+
+async function cargarCuenta() {
+  const el = document.getElementById('cuenta-results');
+  el.innerHTML = '<div class="loading">Conectando...</div>';
+  try {
+    const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=client_credentials&client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}`
+    });
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) { el.innerHTML = '<div class="error-msg">Necesita autorización OAuth completa del usuario.</div>'; return; }
+    el.innerHTML = '<div style="color:#00a650;font-weight:500;padding:1rem 0">✓ Conectado exitosamente</div>';
+  } catch(e) { el.innerHTML = '<div class="error-msg">Para datos de cuenta necesitamos completar OAuth.</div>'; }
+}
+
+document.getElementById('search-query').addEventListener('keydown', e => { if(e.key==='Enter') buscarMercado(); });
+document.getElementById('kw-query').addEventListener('keydown', e => { if(e.key==='Enter') buscarKeywords(); });
+</script>
+</body>
+</html>
